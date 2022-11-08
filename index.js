@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('colors');
 require("dotenv").config();
 const app = express();
@@ -10,7 +11,6 @@ app.use(cors());
 app.use(express.json());
 
 //MangoDB Connection
-const { MongoClient, ServerApiVersion } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.vqm0pbr.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
@@ -65,6 +65,25 @@ app.get('/services', async (req, res) => {
             homeServices: homeServices
         })
 
+    } catch (error) {
+        console.log(error.name.bgRed, error.message.bold);
+        res.send({
+            status: false,
+            error: error.message
+        })
+    }
+})
+
+//get a single service from the DB
+app.get('/service/:id', async (req, res) => {
+    const id = req.params.id;
+    try {
+        const service = await serviceCollection.findOne({ _id: ObjectId(id) })
+        console.log(service);
+        res.send({
+            status: true,
+            service: service,
+        })
     } catch (error) {
         console.log(error.name.bgRed, error.message.bold);
         res.send({
