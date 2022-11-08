@@ -56,10 +56,13 @@ app.post('/service', async (req, res) => {
 app.get('/services', async (req, res) => {
     try {
         const cursor = serviceCollection.find({});
+        const cursor2 = serviceCollection.find({}).sort({ _id: -1 });
         const services = await cursor.toArray();
+        const homeServices = await cursor2.limit(3).toArray();
         res.send({
             status: true,
-            services: services
+            services: services,
+            homeServices: homeServices
         })
 
     } catch (error) {
