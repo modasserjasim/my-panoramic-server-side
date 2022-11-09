@@ -193,6 +193,53 @@ app.delete('/review/:id', async (req, res) => {
     }
 })
 
+// update the review
+
+// step1: we have to get the data using id to load it on routes 
+app.get('/review/:id', async (req, res) => {
+    const id = req.params.id;
+    try {
+        const review = await reviewsCollection.findOne({ _id: ObjectId(id) });
+        res.send({
+            status: true,
+            review: review
+        })
+
+    } catch (error) {
+        console.log(error.name.bgRed, error, message.bold);
+        res.send({
+            status: false,
+            error: error.message
+        })
+    }
+})
+
+// step2: create the API with patch
+app.patch('/review/:id', async (req, res) => {
+    const id = req.params.id;
+    try {
+        const result = await reviewsCollection.updateOne({ _id: ObjectId(id) }, { $set: req.body });
+        console.log(result);
+        if (result.matchedCount) {
+            res.send({
+                status: true,
+                message: `Successfully updated your review for ${req.body.serviceName}`
+            })
+        } else {
+            res.send({
+                status: false,
+                error: "Couldn't update the product"
+            })
+        }
+    } catch (error) {
+        console.log(error.name.bgRed, error.message.bold);
+        res.send({
+            status: false,
+            error: error.message
+        })
+    }
+})
+
 app.get('/', (req, res) => {
     res.send('My Panorama App is running!');
 })
