@@ -171,6 +171,28 @@ app.get('/user-reviews', async (req, res) => {
     }
 })
 
+//delete review
+app.delete('/review/:id', async (req, res) => {
+    const id = req.params.id;
+    try {
+        const result = await reviewsCollection.deleteOne({ _id: ObjectId(id) });
+
+        if (result.deletedCount) {
+            res.send({
+                status: true,
+                message: `Successfully deleted the review!`
+            })
+        }
+
+    } catch (error) {
+        console.log(error.name.bgRed, error.message.bold);
+        res.send({
+            status: false,
+            error: error.message
+        })
+    }
+})
+
 app.get('/', (req, res) => {
     res.send('My Panorama App is running!');
 })
