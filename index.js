@@ -25,8 +25,9 @@ async function run() {
 run();
 
 const serviceCollection = client.db('myPanoramic').collection('services');
+const reviewsCollection = client.db('myPanoramic').collection('reviews');
 
-// get data from client and save to db
+// get service data from client and save to db
 app.post('/service', async (req, res) => {
     try {
         const result = await serviceCollection.insertOne(req.body);
@@ -89,6 +90,32 @@ app.get('/service/:id', async (req, res) => {
         res.send({
             status: false,
             error: error.message
+        })
+    }
+})
+
+// get reviews data from client and save to db
+app.post('/review', async (req, res) => {
+    try {
+        const result = await reviewsCollection.insertOne(req.body);
+        console.log('review added', result);
+        if (result.insertedId) {
+            res.send({
+                status: true,
+                message: `Your have left a review to ${req.body.serviceName} service`,
+            });
+        } else {
+            res.send({
+                status: false,
+                error: "Error Occurred! Couldn't create the service."
+            })
+        }
+    } catch (error) {
+        console.log(error.name.bgRed, error.message.bold);
+        res.send({
+            success: false,
+            error: error.message
+
         })
     }
 })
