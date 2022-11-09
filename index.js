@@ -94,7 +94,7 @@ app.get('/service/:id', async (req, res) => {
     }
 })
 
-// get reviews data from client and save to db
+// get reviews data from client and save to db using Post method
 app.post('/review', async (req, res) => {
     try {
         const result = await reviewsCollection.insertOne(req.body);
@@ -131,6 +131,32 @@ app.get('/reviews', async (req, res) => {
         }
         const cursor = reviewsCollection.find(query);
         const reviews = await cursor.toArray();
+        res.send({
+            status: true,
+            reviews: reviews,
+        })
+
+    } catch (error) {
+        console.log(error.name.bgRed, error.message.bold);
+        res.send({
+            status: false,
+            error: error.message
+        })
+    }
+})
+
+//get the reviews for particular user from the database
+app.get('/user-reviews', async (req, res) => {
+    try {
+        let query = {};
+        if (req.query.email) {
+            query = {
+                email: req.query.email
+            }
+        }
+        const cursor = reviewsCollection.find(query);
+        const reviews = await cursor.toArray();
+        console.log(reviews);
         res.send({
             status: true,
             reviews: reviews,
