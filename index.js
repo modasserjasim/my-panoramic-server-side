@@ -120,6 +120,31 @@ app.post('/review', async (req, res) => {
     }
 })
 
+//get the reviews for particular service from the database
+app.get('/reviews', async (req, res) => {
+    try {
+        let query = {};
+        if (req.query.serviceId) {
+            query = {
+                serviceId: req.query.serviceId
+            }
+        }
+        const cursor = reviewsCollection.find(query);
+        const reviews = await cursor.toArray();
+        res.send({
+            status: true,
+            reviews: reviews,
+        })
+
+    } catch (error) {
+        console.log(error.name.bgRed, error.message.bold);
+        res.send({
+            status: false,
+            error: error.message
+        })
+    }
+})
+
 app.get('/', (req, res) => {
     res.send('My Panorama App is running!');
 })
