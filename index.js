@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('colors');
 require("dotenv").config();
@@ -27,6 +28,34 @@ run();
 const serviceCollection = client.db('myPanoramic').collection('services');
 const reviewsCollection = client.db('myPanoramic').collection('reviews');
 
+
+//verify user with token
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+    // console.log(authHeader);
+    if (!authHeader) {
+        return res.status(401).send({ message: 'Unauthorized Access' });
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (error, decoded) {
+        if (error) {
+            res.status(403).send({ message: 'Forbidden Access' });
+        }
+        req.decoded = decoded;
+        next();
+    })
+
+}
+
+//JWT implementation
+app.post('/jwt', async (req, res) => {
+    const user = req.body;
+    console.log(user);
+    const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' });
+    res.send({ token });
+})
+
+//before JWT
 // get service data from client and save to db
 app.post('/service', async (req, res) => {
     try {
@@ -57,9 +86,9 @@ app.post('/service', async (req, res) => {
 app.get('/services', async (req, res) => {
     try {
         const cursor = serviceCollection.find({});
-        const cursor2 = serviceCollection.find({}).sort({ _id: -1 });
+        const cursorLimit = serviceCollection.find({}).sort({ _id: -1 });
         const services = await cursor.toArray();
-        const homeServices = await cursor2.limit(3).toArray();
+        const homeServices = await cursorLimit.limit(3).toArray();
         res.send({
             status: true,
             services: services,
@@ -80,7 +109,7 @@ app.get('/service/:id', async (req, res) => {
     const id = req.params.id;
     try {
         const service = await serviceCollection.findOne({ _id: ObjectId(id) })
-        console.log(service);
+        // console.log(service);
         res.send({
             status: true,
             service: service,
@@ -98,7 +127,7 @@ app.get('/service/:id', async (req, res) => {
 app.post('/review', async (req, res) => {
     try {
         const result = await reviewsCollection.insertOne(req.body);
-        console.log('review added', result);
+        // console.log('review added', result);
         if (result.insertedId) {
             res.send({
                 status: true,
@@ -120,7 +149,7 @@ app.post('/review', async (req, res) => {
     }
 })
 
-//get the reviews for particular service from the database
+//get the reviews for particular service from the database (PUBLIC)
 app.get('/reviews', async (req, res) => {
     try {
         let query = {};
@@ -145,9 +174,14 @@ app.get('/reviews', async (req, res) => {
     }
 })
 
-//get the reviews for particular user from the database
-app.get('/user-reviews', async (req, res) => {
+//get the reviews for particular user from the database (PRIVATE)
+app.get('/user-reviews', verifyJWT, async (req, res) => {
+
     try {
+        const decoded = req.decoded;
+        if (decoded.email !== req.query.email) {
+            res.status(401).send({ message: 'Unauthorized access' });
+        }
         let query = {};
         if (req.query.email) {
             query = {
@@ -156,7 +190,7 @@ app.get('/user-reviews', async (req, res) => {
         }
         const cursor = reviewsCollection.find(query);
         const reviews = await cursor.toArray();
-        console.log(reviews);
+        // console.log(reviews);
         res.send({
             status: true,
             reviews: reviews,
@@ -172,7 +206,7 @@ app.get('/user-reviews', async (req, res) => {
 })
 
 //delete review
-app.delete('/review/:id', async (req, res) => {
+app.delete('/review/:id', verifyJWT, async (req, res) => {
     const id = req.params.id;
     try {
         const result = await reviewsCollection.deleteOne({ _id: ObjectId(id) });
@@ -215,11 +249,11 @@ app.get('/review/:id', async (req, res) => {
 })
 
 // step2: create the API with patch
-app.patch('/review/:id', async (req, res) => {
+app.patch('/review/:id', verifyJWT, async (req, res) => {
     const id = req.params.id;
     try {
         const result = await reviewsCollection.updateOne({ _id: ObjectId(id) }, { $set: req.body });
-        console.log(result);
+        // console.log(result);
         if (result.matchedCount) {
             res.send({
                 status: true,
