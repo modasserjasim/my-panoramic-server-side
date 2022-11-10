@@ -129,7 +129,7 @@ app.get('/reviews', async (req, res) => {
                 serviceId: req.query.serviceId
             }
         }
-        const cursor = reviewsCollection.find(query);
+        const cursor = reviewsCollection.find(query).sort({ _id: -1 });
         const reviews = await cursor.toArray();
         res.send({
             status: true,
